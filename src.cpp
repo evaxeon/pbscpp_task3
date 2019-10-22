@@ -15,49 +15,23 @@ public:
 	}
 };
 
-template <class T>
+template <class T, class M>
 class MyAlloc {
  public:
-   typedef T        value_type;
-   typedef T*       pointer;
-   typedef const T* const_pointer;
-   typedef T&       reference;
-   typedef const T& const_reference;
-   typedef std::size_t    size_type;
-   typedef std::ptrdiff_t difference_type;
+   typedef T value_type;
+   MyAlloc() noexcept {}
+   template <class U> MyAlloc (const MyAlloc<U, U>&) noexcept {}
 
-   template <class U>
-   struct rebind {
-       typedef MyAlloc<U> other;
-   };
-
-   pointer address (reference value) const {
-       return &value;
-   }
-   const_pointer address (const_reference value) const {
-       return &value;
+   T* allocate (size_t num, const void* = 0) {
+   		//template with two parameters + static cast trick
+       return static_cast<T*>(M::operator new(num*sizeof(T)));
    }
 
-   MyAlloc() throw() {
-   }
-   MyAlloc(const MyAlloc&) throw() {
-   }
-   template <class U>
-     MyAlloc (const MyAlloc<U>&) throw() {
-   }
-   ~MyAlloc() throw() {
-   }
-
-   pointer allocate (size_type num, const void* = 0) {
-       pointer ret = (pointer) A::operator new(num);
-       return ret;
-   }
-
-   void deallocate (pointer p, size_type num) {
-       ::operator delete((void*)p);
+   void deallocate (T* p, size_t num) {
+       M::operator delete(p, num);
    }
 };
 
 int main() {
-	auto sp = std::allocate_shared<A> (MyAlloc<A>());
+	auto sp = std::allocate_shared<A> (MyAlloc<A, A>());
 }
